@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MARGRAKSHAK — Road Safety Navigation</title>
+  <script src="tailwind.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              navy: '#12614E',
+              teal: '#12614E',
+              slate: '#0F172A',
+              muted: '#64748B',
+              bg: '#F8FAFC',
+              border: '#E2E8F0',
+            },
+            hazard: {
+              amber: '#F59E0B',
+              orange: '#EA580C',
+              red: '#DC2626',
+              green: '#16A34A',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="polish.css">
+  <style>
+    /* Custom clean scrollbars & map elements */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .map-grid {
+      background-color: #f1f5f9;
+      background-image: 
+        linear-gradient(to right, rgba(203, 213, 225, 0.4) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.4) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    /* Pulse for live vehicle indicator */
+    @keyframes subtle-beacon {
+      0% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    .beacon-ring {
+      animation: subtle-beacon 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    /* Hazard proximity alert soft flash */
+    @keyframes alert-glow {
+      0%, 100% { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+      50% { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25), 0 10px 15px -3px rgba(0,0,0,0.1); }
+    }
+    .proximity-urgent {
+      animation: alert-glow 1.2s ease-in-out infinite;
+    }
+    /* Screen transition smoothness */
+    .view-screen {
+      transition: opacity 0.15s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-brand-slate font-sans antialiased min-h-screen flex justify-center items-start sm:p-4 md:p-8 select-none">
+
+  <!-- Mobile Device Frame Container -->
+  <div class="w-full max-w-[420px] bg-slate-50 min-h-screen sm:min-h-[880px] sm:max-h-[890px] sm:rounded-[36px] shadow-2xl relative overflow-hidden flex flex-col border border-slate-800">
+
+    <!-- Top Hardware Status Bar -->
+    <header class="bg-white/95 backdrop-blur-md px-5 pt-3 pb-2 flex justify-between items-center text-xs font-semibold text-slate-700 z-50 border-b border-slate-100 flex-shrink-0">
+      <span class="tracking-tight font-medium" id="status-clock">09:41</span>
+      <div class="flex items-center space-x-1.5">
+        <span class="px-1.5 py-0.5 text-[10px] font-mono tracking-wider font-bold rounded bg-slate-100 text-slate-600 border border-slate-200">UI DEMO</span>
+        <!-- Icons -->
+        <svg class="w-3.5 h-3.5 text-slate-700 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.25c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l.73-.73C8.03 20.19 9.93 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+        <svg class="w-3.5 h-3.5 text-slate-700 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/></svg>
+        <div class="w-5 h-2.5 border border-slate-600 rounded-sm p-0.5 flex items-center">
+          <div class="h-full bg-slate-700 rounded-2xs w-3.5"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Content Wrapper -->
+    <main class="relative flex-1 overflow-hidden flex flex-col bg-brand-bg">
+
+      <!-- ========================================== -->
+      <!-- VIEW 1: HOME SCREEN                       -->
+      <!-- ========================================== -->
+<section id="view-home" class="view-screen flex-1 overflow-y-auto">
+<div class="home-top"><div class="brand-lockup"><span class="brand-mark">↗</span><div><strong>Margrakshak</strong><small>A little more aware. A lot more prepared.</small></div></div><button class="icon-button" onclick="toggleNotificationSheet(true)" aria-label="Road notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button></div>
+<div class="home-content"><div class="location-line"><span class="location-dot"></span> Connaught Place, New Delhi <span class="demo-tag">Sample area</span></div><h1>Every road.<br>A little safer.</h1><p class="intro">Know what’s ahead before you set off.</p>
+<button class="destination-search" onclick="switchView('search')"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><span>Where are you heading?</span><span class="search-arrow">↗</span></button>
+<div class="quick-places"><button onclick="selectQuickDestination('Connaught Place, New Delhi')"><span>⌂</span>Home</button><button onclick="selectQuickDestination('Gurugram Cyber City')"><span>▥</span>Work</button><button onclick="selectQuickDestination('IGI Airport Terminal 3')"><span>↗</span>Airport</button><button onclick="openSavedRoutesModal()"><span>☆</span>Saved</button></div>
+<div class="section-title"><h2>Your road, at a glance</h2><button onclick="toggleWhatsAheadSheet(true)">See all ↗</button></div>
+<div class="area-map" role="img" aria-label="Illustrative Delhi road map with three sample road alerts"><svg viewBox="0 0 360 155" preserveAspectRatio="xMidYMid slice"><rect width="360" height="155" fill="#edf0e7"/><path d="M0 25h90v38H0zm135 0h72v55h-72zm110-15h115v57H245zM30 107h87v48H30zm162-2h79v50h-79z" fill="#dce6d5"/><path d="M-30 92Q110 40 185 83T390 79M123-20L143 180M288-20L275 180M-10 135L370 29" stroke="#fff" stroke-width="15" fill="none"/><path d="M-30 92Q110 40 185 83T390 79" stroke="#c4cec0" stroke-width="2" fill="none"/><path d="M132 0L145 79Q230 119 365 80" stroke="#12614e" stroke-width="6" fill="none"/><text x="16" y="24" fill="#7b8675" font-size="10" letter-spacing="1">NEW DELHI</text><text x="219" y="141" fill="#7b8675" font-size="9">NH 48</text><circle cx="145" cy="79" r="13" fill="#fff"/><circle cx="145" cy="79" r="8" fill="#12614e"/><circle cx="230" cy="98" r="12" fill="#fff"/><text x="230" y="103" text-anchor="middle" fill="#b36220" font-size="16">!</text><circle cx="316" cy="89" r="12" fill="#fff"/><text x="316" y="94" text-anchor="middle" fill="#b36220" font-size="16">!</text></svg><span class="map-caption">Illustrative map · NH 48 corridor</span></div>
+<div class="road-overview"><div><span class="status-dot"></span><strong>4 road alerts nearby</strong><small>Includes 1 roadwork zone</small></div><button class="circle-arrow" onclick="toggleWhatsAheadSheet(true)" aria-label="View nearby road alerts">↗</button></div>
+<div class="section-title"><h2>Plan your next drive</h2><span>Suggested</span></div>
+<button class="featured-route" onclick="selectDestination('Gurugram Cyber City','24.6 km','42 min',82,4,1)"><div class="route-heading"><span class="route-symbol">↗</span><div><strong>Gurugram Cyber City</strong><small>via NH 48 · 24.6 km</small></div><span class="route-time">42<small>min</small></span></div><div class="route-bottom"><span><i></i>Fewer reported hazards</span><span>View route →</span></div></button>
+<div class="safety-note"><span>◈</span><div><strong>Better roads start with us.</strong><p>Spotted a hazard? Report it once safely parked.</p></div><button onclick="openReportHazardModal()" aria-label="Report a road hazard">＋</button></div><p class="demo-note">Interactive prototype · Sample routes and alerts</p></div></section>
+      <section id="view-search" class="view-screen hidden flex-1 flex flex-col bg-white overflow-y-auto">
+        <!-- Search Header Bar -->
+        <div class="p-4 border-b border-brand-border bg-slate-50/80 sticky top-0 z-20">
+          <div class="flex items-center space-x-2">
+            <button onclick="switchView('home')" class="p-2 rounded-lg text-slate-600 hover:bg-slate-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="relative flex-1">
+              <input id="destination-input" type="text" value="Gurugram Cyber City" placeholder="Search destination in India..." class="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-800 focus:outline-none focus:border-brand-navy shadow-2xs">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <button onclick="clearSearchInput()" class="absolute right-2.5 top-3 text-slate-400 hover:text-slate-600">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-2 mt-3 px-1 text-xs text-slate-500">
+            <span class="inline-block w-2 h-2 rounded-full bg-teal-600"></span>
+            <span>Origin: <strong>Connaught Place, New Delhi</strong></span>
+          </div>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <!-- Recent Searches List -->
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Recent Destinations</div>
+            <div class="space-y-1.5">
+              <div onclick="selectDestination('Gurugram Cyber City', '24.6 km', '42 min', 82, 4, 1)" class="p-3 rounded-lg border border-slate-200 hover:border-brand-navy cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-all">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded bg-blue-50 text-brand-navy flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-800">Gurugram Cyber City</h3>
+                    <p class="text-xs text-slate-500">NH-48 via Shankar Chowk • Haryana</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-700 block">24.6 km</span>
+                  <span class="text-[11px] text-emerald-700 font-semibold">Score 82</span>
+                </div>
+              </div>
+
+              <div onclick="selectDestination('Indira Gandhi Int\'l Airport (T3)', '14.8 km', '26 min', 91, 1, 0)" class="p-3 rounded-lg border border-slate-200 hover:border-brand-navy cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-all">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded bg-blue-50 text-brand-navy flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-800">IGI Airport Terminal 3</h3>
+                    <p class="text-xs text-slate-500">Ullany Bridge Express Route • New Delhi</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-700 block">14.8 km</span>
+                  <span class="text-[11px] text-emerald-700 font-semibold">Score 91</span>
+                </div>
+              </div>
+
+              <div onclick="selectDestination('Noida Sector 62', '21.5 km', '38 min', 76, 5, 2)" class="p-3 rounded-lg border border-slate-200 hover:border-brand-navy cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-all">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded bg-blue-50 text-brand-navy flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-800">Noida Sector 62</h3>
+                    <p class="text-xs text-slate-500">Delhi-Meerut Expy • Uttar Pradesh</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-700 block">21.5 km</span>
+                  <span class="text-[11px] text-amber-700 font-semibold">Score 76</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Route Options with Safety Metrics -->
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Evaluated Route Options</div>
+            
+            <div class="border-2 border-brand-navy rounded-xl p-3.5 bg-blue-50/40 relative cursor-pointer" onclick="goToRoutePreview('safe')">
+              <span class="absolute -top-2.5 right-3 bg-brand-navy text-white text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded shadow-xs">Recommended: Safest</span>
+              <div class="flex justify-between items-start">
+                <div>
+                  <h4 class="text-sm font-bold text-slate-900">via NH-48 Express Corridor</h4>
+                  <p class="text-xs text-slate-600 mt-0.5">Smooth asphalt, monitored speed breakers</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-base font-bold text-brand-navy">42 min</span>
+                  <span class="text-xs text-slate-500 block">24.6 km</span>
+                </div>
+              </div>
+
+              <!-- Indicators pill row -->
+              <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-blue-200/60 text-center">
+                <div class="bg-white rounded p-1.5 border border-blue-100">
+                  <span class="text-[10px] text-slate-500 block">Safety Score</span>
+                  <span class="text-xs font-bold text-emerald-700">82 / 100</span>
+                </div>
+                <div class="bg-white rounded p-1.5 border border-blue-100">
+                  <span class="text-[10px] text-slate-500 block">Hazards</span>
+                  <span class="text-xs font-bold text-amber-700">4 Ahead</span>
+                </div>
+                <div class="bg-white rounded p-1.5 border border-blue-100">
+                  <span class="text-[10px] text-slate-500 block">Roadworks</span>
+                  <span class="text-xs font-bold text-slate-700">1 Zone</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alternative 2: Faster but rougher -->
+            <div class="mt-2.5 border border-slate-200 rounded-xl p-3 bg-white hover:border-slate-300 cursor-pointer" onclick="goToRoutePreview('fast')">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h4 class="text-sm font-bold text-slate-800">via Mehrauli-Gurgaon Rd</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">3 min faster • High congestion & rough patches</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-base font-bold text-slate-800">39 min</span>
+                  <span class="text-xs text-slate-500 block">22.8 km</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 mt-2 text-xs">
+                <span class="text-amber-800 bg-amber-100 px-2 py-0.5 rounded font-medium">Score: 68/100</span>
+                <span class="text-slate-600">8 Hazards (potholes + unmarked breakers)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 3: ROUTE PREVIEW SCREEN              -->
+      <!-- ========================================== -->
+      <section id="view-preview" class="view-screen hidden flex-1 flex flex-col relative overflow-hidden">
+        <!-- Interactive Realistic Map Area -->
+        <div class="relative flex-1 map-grid overflow-hidden">
+          
+          <!-- Back button float -->
+          <div class="absolute top-4 left-4 z-20">
+            <button onclick="switchView('search')" class="bg-white text-slate-700 p-2.5 rounded-xl shadow-md border border-slate-200 flex items-center gap-1.5 text-xs font-bold hover:bg-slate-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              <span>Back</span>
+            </button>
+          </div>
+
+          <!-- Floating Map Mode Controls -->
+          <div class="absolute top-4 right-4 z-20 flex flex-col space-y-2">
+            <button onclick="toggleMapLayersModal()" title="Map Layers" class="w-9 h-9 bg-white text-slate-700 rounded-lg shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </button>
+            <button onclick="triggerMapZoom('in')" title="Zoom In" class="w-9 h-9 bg-white text-slate-700 rounded-lg shadow-md border border-slate-200 flex items-center justify-center font-bold text-base hover:bg-slate-50">+</button>
+            <button onclick="triggerMapZoom('out')" title="Zoom Out" class="w-9 h-9 bg-white text-slate-700 rounded-lg shadow-md border border-slate-200 flex items-center justify-center font-bold text-base hover:bg-slate-50">−</button>
+          </div>
+
+          <!-- Realistic Vector Road Network Overlay (SVG) -->
+          <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 480">
+            <defs>
+              <linearGradient id="safeRouteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1E3A8A"/>
+                <stop offset="100%" stop-color="#0D9488"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Base Secondary Roads -->
+            <path d="M 50 40 Q 90 120 110 240 T 80 440" fill="none" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 280 20 Q 320 180 340 320 T 360 460" fill="none" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 30 180 Q 200 160 380 190" fill="none" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
+            <path d="M 10 320 Q 180 300 390 350" fill="none" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>
+
+            <!-- Alternative Route Path (Grey-Dashed) -->
+            <path id="alt-route-path" d="M 70 80 Q 180 90 240 180 T 310 390" fill="none" stroke="#94a3b8" stroke-width="5" stroke-dasharray="6,4" stroke-linecap="round"/>
+
+            <!-- Main Recommended Safe Route Path (NH-48) -->
+            <path id="main-route-path" d="M 70 80 Q 120 140 160 210 T 210 310 T 260 410" fill="none" stroke="#1E3A8A" stroke-width="7" stroke-linecap="round"/>
+            <path d="M 70 80 Q 120 140 160 210 T 210 310 T 260 410" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+
+          <!-- Road Name Labels on Map -->
+          <div class="absolute top-[88px] left-[100px] text-[10px] font-mono text-slate-500 bg-white/80 px-1 py-0.5 rounded border border-slate-200">Connaught Outer Cir</div>
+          <div class="absolute top-[205px] left-[175px] text-[10px] font-bold text-brand-navy bg-white/90 px-1.5 py-0.5 rounded border border-blue-200 shadow-2xs">NH-48 (Safe Corridor)</div>
+          <div class="absolute top-[345px] left-[190px] text-[10px] font-mono text-slate-500 bg-white/80 px-1 py-0.5 rounded border border-slate-200">Shankar Chowk Junction</div>
+
+          <!-- Origin Pin (Current Location) -->
+          <div class="absolute top-[68px] left-[58px] z-10 flex flex-col items-center">
+            <div class="w-6 h-6 rounded-full bg-blue-600 border-2 border-white shadow-md flex items-center justify-center text-white">
+              <div class="w-2 h-2 rounded-full bg-white"></div>
+            </div>
+            <span class="text-[10px] font-bold bg-white text-slate-800 px-1 rounded shadow-xs mt-0.5">Start</span>
+          </div>
+
+          <!-- Destination Pin -->
+          <div class="absolute top-[398px] left-[248px] z-10 flex flex-col items-center">
+            <div class="w-6 h-6 rounded-full bg-teal-600 border-2 border-white shadow-md flex items-center justify-center text-white">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+            </div>
+            <span class="text-[10px] font-bold bg-white text-slate-800 px-1 rounded shadow-xs mt-0.5">Gurugram</span>
+          </div>
+
+          <!-- Map Hazard Markers (Interactive bottom sheet triggers) -->
+          <!-- Marker 1: Large Speed Breaker (NH-48) -->
+          <div onclick="openHazardBottomSheet('Large Speed Breaker', 'High Risk', '150 m ahead', 'NH-48 Near Mahipalpur Flyover', 'Today (25 min ago)', 142, 'Slow down to 25 km/h')" 
+               class="absolute top-[135px] left-[110px] z-10 cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group">
+            <div class="w-6 h-6 rounded-full bg-hazard-orange text-white flex items-center justify-center border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+              <span class="text-[11px] font-black">⚠</span>
+            </div>
+            <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white text-[9px] font-bold px-1 rounded opacity-90">Breaker</div>
+          </div>
+
+          <!-- Marker 2: Pothole -->
+          <div onclick="openHazardBottomSheet('Deep Pothole', 'Medium Risk', '650 m ahead', 'NH-48 Middle Lane', 'Today', 88, 'Shift to right lane carefully')"
+               class="absolute top-[185px] left-[142px] z-10 cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group">
+            <div class="w-5 h-5 rounded-full bg-hazard-amber text-white flex items-center justify-center border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+              <span class="text-[10px] font-bold">◉</span>
+            </div>
+          </div>
+
+          <!-- Marker 3: Road Construction -->
+          <div onclick="openHazardBottomSheet('Road Construction', 'Medium Risk', '1.2 km ahead', 'NH-48 Left Lane Expansion', 'Yesterday', 214, 'Keep right lane')"
+               class="absolute top-[260px] left-[185px] z-10 cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group">
+            <div class="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+              <span class="text-[10px] font-bold">▥</span>
+            </div>
+          </div>
+
+          <!-- Marker 4: Lane Diversion -->
+          <div onclick="openHazardBottomSheet('Lane Diversion', 'Notice', '2.1 km ahead', 'Near IFFCO Chowk', 'Today', 76, 'Follow temporary cones')"
+               class="absolute top-[320px] left-[215px] z-10 cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group">
+            <div class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+              <span class="text-[10px] font-bold">↪</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Route Information Panel (Screen 3 Spec) -->
+        <div class="bg-white rounded-t-2xl border-t border-slate-200 shadow-xl p-4 z-30 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold uppercase tracking-wider">Safe Route Active</span>
+              <span class="text-xs text-slate-500 font-medium">via NH-48</span>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-500">Road Safety Score</span>
+              <span class="text-xs font-bold font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 ml-1">82 / 100</span>
+            </div>
+          </div>
+
+          <div class="flex items-baseline justify-between py-1 border-b border-slate-100">
+            <div class="flex items-baseline space-x-2">
+              <span class="text-2xl font-bold font-mono text-slate-900">42</span>
+              <span class="text-xs font-semibold text-slate-500">min</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-sm font-semibold text-slate-700">24.6 km</span>
+              <span class="text-slate-300">•</span>
+              <span class="text-xs text-emerald-600 font-medium">Smooth traffic</span>
+            </div>
+            <button onclick="toggleRouteHazardsBreakdown()" class="text-xs text-brand-navy font-semibold hover:underline">
+              View Route Details
+            </button>
+          </div>
+
+          <!-- Hazards along this route badge list -->
+          <div class="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Verified Along This Route:</div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="px-2 py-0.5 rounded bg-orange-100 text-orange-900 border border-orange-200 text-[11px] font-medium flex items-center gap-1">
+                <span>⚠</span> 2 Speed Breakers
+              </span>
+              <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-medium flex items-center gap-1">
+                <span>◉</span> 1 Pothole
+              </span>
+              <span class="px-2 py-0.5 rounded bg-yellow-100 text-yellow-900 border border-yellow-200 text-[11px] font-medium flex items-center gap-1">
+                <span>▥</span> 1 Construction
+              </span>
+              <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-200 text-[11px] font-medium flex items-center gap-1">
+                <span>↪</span> 1 Diversion
+              </span>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="switchView('search')" class="py-3 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-all">
+              Change Route
+            </button>
+            <button onclick="launchActiveNavigation()" class="py-3 px-3 bg-brand-navy hover:bg-blue-900 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md active:scale-98 transition-all">
+              <svg class="w-4 h-4 text-teal-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+              <span>Start Safe Navigation</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 4: ACTIVE NAVIGATION (THE CORE SCREEN)-->
+      <!-- ========================================== -->
+      <section id="view-active-nav" class="view-screen hidden flex-1 flex flex-col relative overflow-hidden bg-slate-100">
+        
+        <!-- ========================================== -->
+        <!-- TOP: NEXT HAZARD HUD CARD (1-SECOND READ)  -->
+        <!-- ========================================== -->
+        <div class="absolute top-2 inset-x-3 z-40">
+          
+          <!-- Next Hazard Card Container -->
+          <div id="hud-hazard-card" class="bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden transition-all duration-300">
+            
+            <!-- Alert Header Banner -->
+            <div id="hud-banner" class="bg-hazard-orange text-white px-3 py-1 flex items-center justify-between text-xs font-bold tracking-wider">
+              <div class="flex items-center space-x-1.5">
+                <span id="hud-icon" class="text-sm">⚠</span>
+                <span id="hud-badge-title">NEXT HAZARD</span>
+              </div>
+              <span id="hud-urgency-badge" class="bg-black/20 text-[10px] uppercase font-mono px-1.5 py-0.5 rounded">High Severity</span>
+            </div>
+
+            <!-- Card Content Body -->
+            <div class="p-3">
+              <div class="flex items-center justify-between">
+                
+                <div class="space-y-0.5">
+                  <h2 id="hud-hazard-name" class="text-base font-extrabold text-slate-900 tracking-tight">Large Speed Breaker</h2>
+                  <div class="flex items-center space-x-2">
+                    <span id="hud-action" class="text-xs font-bold text-hazard-orange uppercase tracking-wide bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">
+                      Slow down
+                    </span>
+                    <span class="text-xs text-slate-500 font-medium">NH-48 • Lane 2</span>
+                  </div>
+                </div>
+
+                <!-- Distance Meter with Prominent Typography -->
+                <div class="text-right pl-3 border-l border-slate-200">
+                  <div id="hud-distance-val" class="text-2xl font-black font-mono tracking-tight text-slate-900">150</div>
+                  <div id="hud-distance-unit" class="text-[11px] font-bold text-slate-500 uppercase">m ahead</div>
+                </div>
+
+              </div>
+
+              <!-- Quick Next Hazard Teaser bar -->
+              <div id="hud-following-teaser" class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span class="flex items-center gap-1 text-slate-700">
+                  <span class="text-slate-400">Then:</span>
+                  <span class="font-semibold" id="hud-following-text">◉ Pothole (650 m ahead)</span>
+                </span>
+                <button onclick="toggleWhatsAheadSheet(true)" class="text-brand-navy font-semibold text-[11px] hover:underline">
+                  What's Ahead (4)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hazard Passed Toast Notification (Transitions dynamically) -->
+          <div id="hud-passed-toast" class="hidden mt-2 bg-emerald-600 text-white rounded-lg px-3 py-2 shadow-lg flex items-center justify-between text-xs font-semibold">
+            <div class="flex items-center space-x-2">
+              <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold">✓</span>
+              <span>Hazard passed: <strong id="hud-passed-name">Large Speed Breaker</strong></span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-100">Confirmed</span>
+          </div>
+
+          <!-- Voice Navigation Alert Bubble (Spec requirement) -->
+          <div id="voice-alert-bubble" class="mt-1.5 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-lg shadow-md flex items-center justify-between text-[11px]">
+            <div class="flex items-center space-x-2">
+              <span class="text-teal-400">♪</span>
+              <span id="voice-alert-text" class="font-medium text-slate-200">“Large speed breaker ahead in 150 meters. Slow down.”</span>
+            </div>
+            <button onclick="dismissVoiceAlert()" class="text-slate-400 hover:text-white text-xs">✕</button>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ACTIVE NAVIGATION MAP CANVAS               -->
+        <!-- ========================================== -->
+        <div class="relative flex-1 map-grid overflow-hidden">
+          
+          <!-- Realistic Moving Map SVG Track -->
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 400 600">
+            <!-- Road surface with road borders -->
+            <path d="M 200 -50 L 200 650" fill="none" stroke="#cbd5e1" stroke-width="44"/>
+            <path d="M 200 -50 L 200 650" fill="none" stroke="#f8fafc" stroke-width="36"/>
+            <!-- Lane dividers -->
+            <path d="M 200 -50 L 200 650" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="16,16"/>
+            
+            <!-- Active Route Guidance Line -->
+            <path id="active-route-line" d="M 200 120 L 200 520" fill="none" stroke="#1E3A8A" stroke-width="8" stroke-linecap="round"/>
+            <path d="M 200 120 L 200 520" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Hazard Marker 1 on Active Road (Interactive) -->
+            <g id="active-marker-1" transform="translate(200, 310)" class="cursor-pointer" onclick="openHazardBottomSheet('Large Speed Breaker', 'High Risk', '150 m ahead', 'NH-48', 'Today', 142, 'Slow down')">
+              <circle r="14" fill="#EA580C" stroke="#ffffff" stroke-width="3"/>
+              <text y="4" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold">⚠</text>
+            </g>
+
+            <!-- Hazard Marker 2 on Road (Further ahead) -->
+            <g id="active-marker-2" transform="translate(190, 160)" class="cursor-pointer" onclick="openHazardBottomSheet('Pothole', 'Medium Risk', '650 m ahead', 'NH-48', 'Today', 88, 'Drive carefully')">
+              <circle r="12" fill="#F59E0B" stroke="#ffffff" stroke-width="2.5"/>
+              <text y="4" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold">◉</text>
+            </g>
+          </svg>
+
+          <!-- Current Vehicle Arrow (Navigation Indicator with pulse) -->
+          <div id="vehicle-arrow-container" class="absolute top-[430px] left-[200px] transform -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-700">
+            <!-- Beacon circle -->
+            <div class="absolute -inset-3 rounded-full bg-blue-500/20 beacon-ring pointer-events-none"></div>
+            <!-- Car Pointer -->
+            <div class="w-8 h-8 rounded-full bg-brand-navy border-2 border-white shadow-lg flex items-center justify-center text-white">
+              <svg class="w-4 h-4 text-teal-300 transform -rotate-45" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Speed Limit & Current Speed Widget (Left Floating) -->
+          <div class="absolute left-3 bottom-28 z-30 flex flex-col space-y-2">
+            <!-- Current Speed Box -->
+            <div id="speed-meter-box" class="bg-white/95 backdrop-blur-md rounded-xl p-2.5 shadow-md border border-slate-200 text-center min-w-[70px]">
+              <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Speed</div>
+              <div id="current-speed-val" class="text-xl font-black font-mono text-slate-900 leading-none my-0.5">62</div>
+              <div class="text-[9px] font-mono text-slate-500">km/h</div>
+              <div id="speed-status-badge" class="mt-1 text-[8px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                Normal
+              </div>
+            </div>
+
+            <!-- Speed Limit Sign (Standard Indian Circular Sign) -->
+            <div class="w-11 h-11 rounded-full bg-white border-[3px] border-red-600 shadow-md flex flex-col items-center justify-center self-center">
+              <span class="text-[8px] font-bold text-slate-500 leading-tight">LIMIT</span>
+              <span class="text-xs font-black font-mono text-slate-900 leading-none">60</span>
+            </div>
+          </div>
+
+          <!-- Right Floating Controls (Location recenter, mute, layer, report) -->
+          <div class="absolute right-3 bottom-28 z-30 flex flex-col space-y-2">
+            <button onclick="recenterVehicle()" title="Recenter Location" class="w-10 h-10 bg-white text-slate-700 rounded-xl shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50">
+              <svg class="w-5 h-5 text-brand-navy" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            </button>
+            <button onclick="toggleAudioMute()" id="mute-nav-btn" title="Mute/Unmute Voice" class="w-10 h-10 bg-white text-slate-700 rounded-xl shadow-md border border-slate-200 flex items-center justify-center hover:bg-slate-50">
+              <span id="mute-icon" class="text-sm">♪</span>
+            </button>
+            <button onclick="openReportHazardModal()" title="Report Road Hazard" class="w-10 h-10 bg-hazard-orange text-white rounded-xl shadow-md border border-orange-600 flex items-center justify-center hover:bg-orange-600">
+              <span class="text-base font-bold">+</span>
+            </button>
+          </div>
+
+          <!-- Simulation Interactive Steps Control Floating Bar -->
+          <div class="absolute bottom-2 inset-x-3 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl p-2 text-white border border-slate-700 flex items-center justify-between shadow-lg">
+            <div class="text-[10px] flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
+              <span class="font-mono text-slate-300">DEMO SIMULATOR:</span>
+            </div>
+            
+            <div class="flex items-center space-x-1">
+              <button onclick="setSimState(0)" id="sim-btn-0" class="px-2 py-1 rounded text-[10px] font-bold bg-teal-600 text-white">150m</button>
+              <button onclick="setSimState(1)" id="sim-btn-1" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">100m</button>
+              <button onclick="setSimState(2)" id="sim-btn-2" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">50m</button>
+              <button onclick="setSimState(3)" id="sim-btn-3" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">20m</button>
+              <button onclick="triggerPassedAndNext()" id="sim-btn-4" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-emerald-400 hover:bg-slate-700">PASS</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- BOTTOM: NAVIGATION METRICS PANEL           -->
+        <!-- ========================================== -->
+        <div class="bg-white border-t border-slate-200 px-4 py-3 z-40 shadow-xl space-y-2.5">
+          
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="flex items-baseline space-x-1.5">
+                <span id="nav-eta-min" class="text-xl font-black font-mono text-slate-900">18</span>
+                <span class="text-xs font-semibold text-slate-500">min</span>
+                <span class="text-slate-300 mx-1">•</span>
+                <span id="nav-eta-clock" class="text-xs font-bold text-slate-700">10:42 AM</span>
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5">
+                <span id="nav-dist-rem" class="font-medium text-slate-700">12.4 km remaining</span>
+              </div>
+            </div>
+
+            <!-- Road & Traffic Info -->
+            <div class="text-right">
+              <div class="text-xs font-bold text-brand-navy flex items-center justify-end gap-1">
+                <span>NH-48</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              </div>
+              <div class="text-[11px] text-slate-500 mt-0.5">
+                Traffic: <span class="text-slate-700 font-medium">Moderate</span> • Safety: <span class="text-emerald-700 font-bold">Good</span>
+              </div>
+            </div>
+
+            <!-- Stop Navigation Button -->
+            <button onclick="endTripAndShowSummary()" class="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all">
+              End Trip
+            </button>
+          </div>
+
+          <!-- Expandable What's Ahead Trigger Button -->
+          <button onclick="toggleWhatsAheadSheet(true)" class="w-full py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-700 text-xs font-semibold flex items-center justify-center space-x-1 transition-all">
+            <span>View All Upcoming Road Hazards</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 5: TRIP SUMMARY SCREEN                -->
+      <!-- ========================================== -->
+      <section id="view-summary" class="view-screen hidden flex-1 flex flex-col bg-white overflow-y-auto">
+        <div class="bg-brand-navy text-white p-5 text-center">
+          <div class="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center mx-auto mb-2 shadow-inner">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h2 class="text-xl font-bold tracking-tight">Demo trip completed</h2>
+          <p class="text-xs text-blue-200 mt-0.5">Delhi (Connaught Place) → Gurugram Cyber City</p>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <!-- Summary Metrics Cards -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <span class="text-[11px] text-slate-500 block uppercase font-medium">Distance Traveled</span>
+              <span class="text-xl font-bold font-mono text-slate-900">24.6 km</span>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <span class="text-[11px] text-slate-500 block uppercase font-medium">Total Duration</span>
+              <span class="text-xl font-bold font-mono text-slate-900">42 min</span>
+            </div>
+          </div>
+
+          <!-- Road Safety Score Result -->
+          <div class="bg-white rounded-xl p-4 border border-brand-border shadow-2xs space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 uppercase">Route Safety Score</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Safe Driving</span>
+            </div>
+            <div class="flex items-baseline space-x-2">
+              <span class="text-3xl font-extrabold font-mono text-slate-900">82</span>
+              <span class="text-sm font-semibold text-slate-500">/ 100</span>
+            </div>
+            <p class="text-xs text-slate-600">Sample trip summary. This prototype does not measure driving behavior.</p>
+          </div>
+
+          <!-- Breakdown Statistics -->
+          <div class="border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+            <div class="font-bold text-slate-800 uppercase tracking-wide text-[11px]">Drive Incident Summary</div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600">Hazards Encountered</span>
+              <span class="font-bold font-mono text-slate-800">3 verified</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600">Timely Warnings Provided</span>
+              <span class="font-bold font-mono text-emerald-700">5 alerts</span>
+            </div>
+            <div class="flex justify-between py-1">
+              <span class="text-slate-600">Roadwork Zones Handled</span>
+              <span class="font-bold font-mono text-slate-800">1 zone</span>
+            </div>
+          </div>
+
+          <!-- CTAs -->
+          <div class="space-y-2 pt-2">
+            <button onclick="openReportHazardModal()" class="w-full py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-all">
+              <span>Report a New Road Hazard</span>
+            </button>
+            <button onclick="switchView('home')" class="w-full py-3.5 bg-brand-navy hover:bg-blue-900 text-white rounded-xl font-bold text-xs shadow-md transition-all">
+              Return to Home
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- BOTTOM SHEET 1: HAZARD DETAIL SHEET        -->
+      <!-- ========================================== -->
+      <div id="modal-hazard-detail" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-xs flex flex-col justify-end">
+        <div class="bg-white rounded-t-2xl p-4 space-y-3.5 border-t border-slate-200 shadow-2xl animate-fade-in-up max-h-[85%] overflow-y-auto">
+          <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto"></div>
+          
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span id="sheet-severity-pill" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-100 text-orange-900">High Risk</span>
+                <span class="text-xs text-slate-500 font-mono" id="sheet-distance">150 m ahead</span>
+              </div>
+              <h3 id="sheet-hazard-name" class="text-base font-extrabold text-slate-900 mt-1">Large Speed Breaker</h3>
+            </div>
+            <button onclick="closeHazardBottomSheet()" class="p-1 rounded-full text-slate-400 hover:text-slate-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Road</span>
+              <span id="sheet-road-name" class="font-bold text-slate-800">NH-48</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Specific Location</span>
+              <span id="sheet-loc-desc" class="font-medium text-slate-800">Near Mahipalpur Flyover</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Reported</span>
+              <span id="sheet-reported-time" class="font-medium text-slate-800">Today (25 min ago)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Community Confirmations</span>
+              <span id="sheet-confirm-count" class="font-mono font-bold text-emerald-700">142 drivers</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Verification Status</span>
+              <span class="font-bold text-blue-700">Sample community report</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-orange-50 border border-orange-200 text-xs text-orange-900 font-medium flex items-center gap-2">
+            <span>🛡</span>
+            <span>Recommended Action: <strong id="sheet-recommended-action">Slow down to 25 km/h</strong></span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="reportHazardFeedback('Incorrect')" class="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+              Report Incorrect
+            </button>
+            <button onclick="reportHazardFeedback('Repaired')" class="py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold">
+              Mark Repaired
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- BOTTOM SHEET 2: WHAT'S AHEAD TIMELINE      -->
+      <!-- ========================================== -->
+      <div id="modal-whats-ahead" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-xs flex flex-col justify-end">
+        <div class="bg-white rounded-t-2xl p-4 space-y-3 border-t border-slate-200 shadow-2xl max-h-[80%] flex flex-col">
+          <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto flex-shrink-0"></div>
+          
+          <div class="flex justify-between items-center flex-shrink-0">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Route Hazard Timeline</h3>
+              <p class="text-[11px] text-slate-500">Next 12 km on NH-48 Corridor</p>
+            </div>
+            <button onclick="toggleWhatsAheadSheet(false)" class="p-1 rounded-full text-slate-400 hover:text-slate-600">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+
+          <!-- Timeline items list -->
+          <div class="overflow-y-auto space-y-2 py-1 pr-1 text-xs">
+            <!-- Current position -->
+            <div class="flex items-start space-x-3 p-2 bg-blue-50/70 rounded-lg border border-blue-100">
+              <div class="w-6 h-6 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold text-[10px] mt-0.5">NOW</div>
+              <div class="flex-1">
+                <span class="font-bold text-slate-900 block">Current Location</span>
+                <span class="text-[11px] text-slate-600">Speed: 62 km/h • Road: NH-48</span>
+              </div>
+            </div>
+
+            <!-- Hazard 1 -->
+            <div class="flex items-start space-x-3 p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+              <div class="w-6 h-6 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs mt-0.5">⚠</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900">Large Speed Breaker</span>
+                  <span class="font-mono font-bold text-orange-700">150 m</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Slow down • Near Mahipalpur</p>
+              </div>
+            </div>
+
+            <!-- Hazard 2 -->
+            <div class="flex items-start space-x-3 p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+              <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs mt-0.5">◉</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900">Deep Pothole</span>
+                  <span class="font-mono font-bold text-amber-700">650 m</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Drive carefully • Middle lane</p>
+              </div>
+            </div>
+
+            <!-- Hazard 3 -->
+            <div class="flex items-start space-x-3 p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+              <div class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-800 flex items-center justify-center font-bold text-xs mt-0.5">▥</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900">Construction Zone</span>
+                  <span class="font-mono font-bold text-slate-700">1.2 km</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Keep right • Lane narrowing</p>
+              </div>
+            </div>
+
+            <!-- Hazard 4 -->
+            <div class="flex items-start space-x-3 p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+              <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs mt-0.5">↪</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900">Lane Diversion</span>
+                  <span class="font-mono font-bold text-slate-700">2.1 km</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Follow signs • Underpass works</p>
+              </div>
+            </div>
+
+            <!-- Hazard 5 -->
+            <div class="flex items-start space-x-3 p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+              <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs mt-0.5">⚠</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900">Sharp Turn & Descent</span>
+                  <span class="font-mono font-bold text-slate-700">3.4 km</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Reduce speed to 40 km/h</p>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="toggleWhatsAheadSheet(false)" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 font-semibold text-slate-800 text-xs rounded-xl flex-shrink-0">
+            Close Timeline
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- MODAL: REPORT A ROAD HAZARD (FLOW)         -->
+      <!-- ========================================== -->
+      <div id="modal-report-hazard" class="hidden absolute inset-0 z-50 bg-black/50 backdrop-blur-xs flex flex-col justify-end">
+        <div class="bg-white rounded-t-2xl p-4 space-y-3.5 border-t border-slate-200 shadow-2xl max-h-[90%] overflow-y-auto">
+          <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto"></div>
+          
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Report Road Hazard</h3>
+              <p class="text-[11px] text-slate-500">Crowdsource real-time alerts to keep drivers safe</p>
+            </div>
+            <button onclick="closeReportHazardModal()" class="p-1 text-slate-400 hover:text-slate-600">✕</button>
+          </div>
+
+          <!-- Hazard Type Selector Grid -->
+          <div>
+            <label class="text-[11px] font-bold text-slate-700 uppercase block mb-1.5">Hazard Type</label>
+            <div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+              <button onclick="selectReportType(this, 'Speed Breaker')" class="report-type-btn p-2 rounded-lg border-2 border-brand-navy bg-blue-50/50 font-bold text-slate-800">
+                <span class="block text-base">⚠</span>
+                <span class="text-[10px]">Breaker</span>
+              </button>
+              <button onclick="selectReportType(this, 'Pothole')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">◉</span>
+                <span class="text-[10px]">Pothole</span>
+              </button>
+              <button onclick="selectReportType(this, 'Road Damage')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">◇</span>
+                <span class="text-[10px]">Damage</span>
+              </button>
+              <button onclick="selectReportType(this, 'Construction')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">▥</span>
+                <span class="text-[10px]">Roadwork</span>
+              </button>
+              <button onclick="selectReportType(this, 'Waterlogging')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">≈</span>
+                <span class="text-[10px]">Waterlog</span>
+              </button>
+              <button onclick="selectReportType(this, 'Road Closure')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">⊖</span>
+                <span class="text-[10px]">Closure</span>
+              </button>
+              <button onclick="selectReportType(this, 'Accident')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">!</span>
+                <span class="text-[10px]">Accident</span>
+              </button>
+              <button onclick="selectReportType(this, 'Other Hazard')" class="report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">
+                <span class="block text-base">?</span>
+                <span class="text-[10px]">Other</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Location Auto-detection readout -->
+          <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
+            <span class="text-slate-600">Location:</span>
+            <span class="font-bold text-slate-800">NH-48, km marker 28.4 (sample location)</span>
+          </div>
+
+          <!-- Severity Selection -->
+          <div>
+            <label class="text-[11px] font-bold text-slate-700 uppercase block mb-1.5">Severity Level</label>
+            <div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+              <button onclick="selectSeverityLevel(this, 'Low')" class="sev-btn p-2 rounded border border-slate-200 bg-white font-medium text-slate-700">Low</button>
+              <button onclick="selectSeverityLevel(this, 'Medium')" class="sev-btn p-2 rounded border border-slate-200 bg-white font-medium text-slate-700">Medium</button>
+              <button onclick="selectSeverityLevel(this, 'High')" class="sev-btn p-2 rounded border-2 border-orange-500 bg-orange-50 font-bold text-orange-900">High</button>
+              <button onclick="selectSeverityLevel(this, 'Dangerous')" class="sev-btn p-2 rounded border border-slate-200 bg-white font-medium text-slate-700">Dangerous</button>
+            </div>
+          </div>
+
+          <!-- Optional description -->
+          <div>
+            <input type="text" placeholder="Short description (e.g. Unmarked speed breaker without paint)" class="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-navy">
+          </div>
+
+          <div class="pt-1">
+            <button onclick="submitHazardReport()" class="w-full py-3 bg-brand-navy hover:bg-blue-900 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+              Submit Road Hazard Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Success Toast Popup -->
+      <div id="report-success-toast" class="hidden absolute top-16 inset-x-4 z-50 bg-emerald-700 text-white p-3 rounded-xl shadow-xl flex items-center justify-between text-xs font-semibold">
+        <div class="flex items-center space-x-2">
+          <span>✓</span>
+          <div>
+            <div>Report saved in this demo</div>
+            <div class="text-[10px] text-emerald-200 font-mono">Not sent to any service</div>
+          </div>
+        </div>
+        <button onclick="dismissReportToast()" class="text-xs text-white">✕</button>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- MODAL: MAP LAYERS DIALOG                   -->
+      <!-- ========================================== -->
+      <div id="modal-map-layers" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3 shadow-2xl border border-slate-200">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Map Safety Layers</h3>
+            <button onclick="toggleMapLayersModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
+              <span class="font-medium text-slate-700">Sample traffic overlay</span>
+              <input type="checkbox" checked class="rounded text-brand-navy">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
+              <span class="font-medium text-slate-700">Road Hazards (Breakers & Potholes)</span>
+              <input type="checkbox" checked class="rounded text-brand-navy">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
+              <span class="font-medium text-slate-700">Active Roadworks & Diversions</span>
+              <input type="checkbox" checked class="rounded text-brand-navy">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
+              <span class="font-medium text-slate-700">Monsoon Waterlogging Alerts</span>
+              <input type="checkbox" checked class="rounded text-brand-navy">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
+              <span class="font-medium text-slate-700">Blackspots & Accidents</span>
+              <input type="checkbox" checked class="rounded text-brand-navy">
+            </label>
+          </div>
+
+          <button onclick="toggleMapLayersModal()" class="w-full py-2 bg-brand-navy text-white text-xs font-bold rounded-lg">
+            Apply Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- MODAL: NOTIFICATIONS / ROAD BULLETINS      -->
+      <!-- ========================================== -->
+      <div id="modal-notifications" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-xs flex flex-col justify-end">
+        <div class="bg-white rounded-t-2xl p-4 space-y-3 border-t border-slate-200 shadow-2xl max-h-[75%] overflow-y-auto">
+          <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto"></div>
+          
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Road Safety Bulletins</h3>
+            <button onclick="toggleNotificationSheet(false)" class="text-slate-400 hover:text-slate-600">✕</button>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-lg border border-red-200 bg-red-50/50">
+              <div class="flex items-center space-x-1.5 text-red-700 font-bold">
+                <span>⚠</span>
+                <span>Dangerous Breaker Alert</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-1">Unmarked speed breaker reported near your saved route (NH-48 Shankar Chowk ramp).</p>
+              <span class="text-[10px] text-slate-400 mt-1 block">12 min ago</span>
+            </div>
+
+            <div class="p-2.5 rounded-lg border border-yellow-200 bg-yellow-50/50">
+              <div class="flex items-center space-x-1.5 text-yellow-800 font-bold">
+                <span>▥</span>
+                <span>NH-48 Construction Update</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-1">Lane narrowing between km 24 and km 26 until 6:00 PM today.</p>
+              <span class="text-[10px] text-slate-400 mt-1 block">45 min ago</span>
+            </div>
+
+            <div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50">
+              <div class="flex items-center space-x-1.5 text-emerald-800 font-bold">
+                <span>✓</span>
+                <span>Report Verified</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-1">Your reported pothole near IGI bypass was verified by 18 other drivers.</p>
+              <span class="text-[10px] text-slate-400 mt-1 block">2 hours ago</span>
+            </div>
+          </div>
+
+          <button onclick="toggleNotificationSheet(false)" class="w-full py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">
+            Dismiss
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Global Prototype Navigation Bar (Allows switching screens cleanly) -->
+    <nav class="bg-white border-t border-slate-200 px-3 py-2 flex items-center justify-around z-40 flex-shrink-0 text-slate-600">
+      <button onclick="switchView('home')" id="tab-home" class="flex flex-col items-center text-brand-navy">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span class="text-[10px] font-bold mt-0.5">Home</span>
+      </button>
+
+      <button onclick="switchView('search')" id="tab-search" class="flex flex-col items-center hover:text-brand-navy">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <span class="text-[10px] font-medium mt-0.5">Search</span>
+      </button>
+
+      <button onclick="switchView('preview')" id="tab-preview" class="flex flex-col items-center hover:text-brand-navy">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        <span class="text-[10px] font-medium mt-0.5">Preview</span>
+      </button>
+
+      <button onclick="switchView('active-nav')" id="tab-nav" class="flex flex-col items-center hover:text-brand-navy">
+        <div class="relative">
+          <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+          <span class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+        </div>
+        <span class="text-[10px] font-bold text-emerald-700 mt-0.5">Drive demo</span>
+      </button>
+
+      <button onclick="openReportHazardModal()" class="flex flex-col items-center hover:text-brand-navy">
+        <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span class="text-[10px] font-medium mt-0.5">Report</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Interactive JavaScript Application Logic -->
+  <script>
+    // Navigation State Registry
+    let currentView = 'home';
+    let isMuted = false;
+    let simIndex = 0;
+
+    // Realistic Simulator States (The requested 150m -> 100m -> 50m -> 20m -> Passed -> Next Hazard)
+    const simulationStates = [
+      {
+        dist: 150,
+        unit: 'm ahead',
+        name: 'Large Speed Breaker',
+        icon: '⚠',
+        action: 'Slow down',
+        urgency: 'Attention',
+        bannerBg: 'bg-hazard-orange',
+        bannerTitle: 'NEXT HAZARD',
+        actionColor: 'text-hazard-orange bg-orange-50 border-orange-200',
+        voice: '“Large speed breaker ahead in 150 meters. Slow down.”',
+        carY: 430,
+        following: '◉ Pothole (650 m ahead)',
+        speed: 62,
+        speedLimit: 60,
+        speedStatus: 'Over limit',
+        speedBadgeColor: 'bg-red-100 text-red-800'
+      },
+      {
+        dist: 100,
+        unit: 'm ahead',
+        name: 'Large Speed Breaker',
+        icon: '⚠',
+        action: 'Prepare to slow down',
+        urgency: 'Caution',
+        bannerBg: 'bg-hazard-orange',
+        bannerTitle: 'NEXT HAZARD',
+        actionColor: 'text-hazard-orange bg-orange-50 border-orange-200',
+        voice: '“100 meters to speed breaker. Reduce speed.”',
+        carY: 390,
+        following: '◉ Pothole (600 m ahead)',
+        speed: 54,
+        speedLimit: 60,
+        speedStatus: 'Safe',
+        speedBadgeColor: 'bg-emerald-100 text-emerald-800'
+      },
+      {
+        dist: 50,
+        unit: 'm ahead',
+        name: 'Large Speed Breaker',
+        icon: '⚠',
+        action: 'Slow down now',
+        urgency: 'Imminent',
+        bannerBg: 'bg-hazard-red',
+        bannerTitle: 'APPROACHING HAZARD',
+        actionColor: 'text-hazard-red bg-red-50 border-red-200',
+        voice: '“Speed breaker in 50 meters. Slow down now.”',
+        carY: 350,
+        following: '◉ Pothole (550 m ahead)',
+        speed: 38,
+        speedLimit: 60,
+        speedStatus: 'Controlled',
+        speedBadgeColor: 'bg-emerald-100 text-emerald-800'
+      },
+      {
+        dist: 20,
+        unit: 'm ahead',
+        name: 'Speed Breaker',
+        icon: '⚠',
+        action: 'Immediate Hazard',
+        urgency: 'Crossing',
+        bannerBg: 'bg-hazard-red',
+        bannerTitle: 'CROSSING BREAKER',
+        actionColor: 'text-hazard-red bg-red-100 border-red-300 font-extrabold',
+        voice: '“Crossing speed breaker.”',
+        carY: 310,
+        following: '◉ Pothole (520 m ahead)',
+        speed: 22,
+        speedLimit: 60,
+        speedStatus: 'Target Speed',
+        speedBadgeColor: 'bg-emerald-100 text-emerald-800'
+      }
+    ];
+
+    // Screen Switching Controller
+    function switchView(viewName) {
+      currentView = viewName;
+      const views = ['home', 'search', 'preview', 'active-nav', 'summary'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) {
+          if (v === viewName) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+
+      // Update Navigation Tab Active Styles
+      const tabs = {
+        'home': 'tab-home',
+        'search': 'tab-search',
+        'preview': 'tab-preview',
+        'active-nav': 'tab-nav'
+      };
+
+      Object.keys(tabs).forEach(k => {
+        const tabEl = document.getElementById(tabs[k]);
+        if (tabEl) {
+          if (k === viewName) {
+            tabEl.classList.add('text-brand-navy', 'font-bold');
+            tabEl.classList.remove('text-slate-500');
+          } else {
+            tabEl.classList.remove('text-brand-navy', 'font-bold');
+            tabEl.classList.add('text-slate-500');
+          }
+        }
+      });
+    }
+
+    // Preset selection handlers
+    function selectQuickDestination(name) {
+      document.getElementById('destination-input').value = name;
+      switchView('search');
+    }
+
+    function selectPresetRoute(routeName) {
+      goToRoutePreview('safe');
+    }
+
+    function selectDestination(name, dist, time, score, hazards, roadworks) {
+      document.getElementById('destination-input').value = name;
+      goToRoutePreview('safe');
+    }
+
+    function clearSearchInput() {
+      const input = document.getElementById('destination-input');
+      input.value = '';
+      input.focus();
+    }
+
+    function goToRoutePreview(mode) {
+      switchView('preview');
+    }
+
+    function startNavigationFlow() {
+      switchView('preview');
+    }
+
+    function launchActiveNavigation() {
+      switchView('active-nav');
+      setSimState(0);
+    }
+
+    function endTripAndShowSummary() {
+      switchView('summary');
+    }
+
+    // Set Simulator Distance Proximity Step
+    function setSimState(index) {
+      simIndex = index;
+      const s = simulationStates[index];
+
+      // Update simulator buttons styling
+      [0, 1, 2, 3].forEach(i => {
+        const btn = document.getElementById(`sim-btn-${i}`);
+        if (i === index) {
+          btn.className = "px-2 py-1 rounded text-[10px] font-bold bg-teal-600 text-white";
+        } else {
+          btn.className = "px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700";
+        }
+      });
+
+      // Update Top HUD Card Elements
+      const card = document.getElementById('hud-hazard-card');
+      const banner = document.getElementById('hud-banner');
+      const hudIcon = document.getElementById('hud-icon');
+      const hudBadgeTitle = document.getElementById('hud-badge-title');
+      const hudUrgency = document.getElementById('hud-urgency-badge');
+      const hudName = document.getElementById('hud-hazard-name');
+      const hudAction = document.getElementById('hud-action');
+      const hudDistVal = document.getElementById('hud-distance-val');
+      const hudDistUnit = document.getElementById('hud-distance-unit');
+      const hudFollowing = document.getElementById('hud-following-text');
+      const voiceText = document.getElementById('voice-alert-text');
+      const vehicleArrow = document.getElementById('vehicle-arrow-container');
+      const currentSpeed = document.getElementById('current-speed-val');
+      const speedBadge = document.getElementById('speed-status-badge');
+
+      // Distance typography scaling for under 100m
+      hudDistVal.textContent = s.dist;
+      hudDistUnit.textContent = s.unit;
+      if (s.dist <= 50) {
+        hudDistVal.className = "text-3xl font-black font-mono tracking-tight text-red-600";
+        card.classList.add('proximity-urgent');
+      } else {
+        hudDistVal.className = "text-2xl font-black font-mono tracking-tight text-slate-900";
+        card.classList.remove('proximity-urgent');
+      }
+
+      // Texts and classes
+      hudName.textContent = s.name;
+      hudIcon.textContent = s.icon;
+      hudAction.textContent = s.action;
+      hudBadgeTitle.textContent = s.bannerTitle;
+      hudUrgency.textContent = s.urgency;
+      hudFollowing.textContent = s.following;
+      voiceText.textContent = s.voice;
+
+      // Color classes
+      banner.className = `${s.bannerBg} text-white px-3 py-1 flex items-center justify-between text-xs font-bold tracking-wider`;
+      hudAction.className = `text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${s.actionColor}`;
+
+      // Vehicle map position
+      vehicleArrow.style.top = `${s.carY}px`;
+
+      // Speedometer
+      currentSpeed.textContent = s.speed;
+      speedBadge.textContent = s.speedStatus;
+      speedBadge.className = `mt-1 text-[8px] font-bold px-1 py-0.5 rounded ${s.speedBadgeColor}`;
+
+      // Hide passed toast if open
+      document.getElementById('hud-passed-toast').classList.add('hidden');
+    }
+
+    // Trigger Hazard Passed and Auto-switch to Next Hazard (Pothole 650 m)
+    function triggerPassedAndNext() {
+      const passedToast = document.getElementById('hud-passed-toast');
+      const hudCard = document.getElementById('hud-hazard-card');
+      const passedName = document.getElementById('hud-passed-name');
+      const banner = document.getElementById('hud-banner');
+      const hudIcon = document.getElementById('hud-icon');
+      const hudBadgeTitle = document.getElementById('hud-badge-title');
+      const hudUrgency = document.getElementById('hud-urgency-badge');
+      const hudName = document.getElementById('hud-hazard-name');
+      const hudAction = document.getElementById('hud-action');
+      const hudDistVal = document.getElementById('hud-distance-val');
+      const hudDistUnit = document.getElementById('hud-distance-unit');
+      const hudFollowing = document.getElementById('hud-following-text');
+      const voiceText = document.getElementById('voice-alert-text');
+      const vehicleArrow = document.getElementById('vehicle-arrow-container');
+      const currentSpeed = document.getElementById('current-speed-val');
+      const speedBadge = document.getElementById('speed-status-badge');
+
+      // Move car slightly past breaker
+      vehicleArrow.style.top = '270px';
+      hudCard.classList.remove('proximity-urgent');
+
+      // Show temporary passed confirmation banner
+      passedName.textContent = "Large Speed Breaker";
+      passedToast.classList.remove('hidden');
+
+      // Play audio notification feedback text
+      voiceText.textContent = "“Hazard passed. Next hazard: Pothole in 650 meters.”";
+
+      // Automatically update the next hazard card smoothly
+      setTimeout(() => {
+        banner.className = "bg-hazard-amber text-white px-3 py-1 flex items-center justify-between text-xs font-bold tracking-wider";
+        hudIcon.textContent = "◉";
+        hudBadgeTitle.textContent = "NEXT HAZARD";
+        hudUrgency.textContent = "Moderate Risk";
+        hudName.textContent = "Deep Pothole";
+        hudAction.textContent = "Drive carefully";
+        hudAction.className = "text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border text-amber-800 bg-amber-50 border-amber-200";
+        hudDistVal.textContent = "650";
+        hudDistVal.className = "text-2xl font-black font-mono tracking-tight text-slate-900";
+        hudDistUnit.textContent = "m ahead";
+        hudFollowing.textContent = "▥ Construction Zone (1.2 km ahead)";
+
+        currentSpeed.textContent = "58";
+        speedBadge.textContent = "Safe Speed";
+        speedBadge.className = "mt-1 text-[8px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-800";
+      }, 1000);
+
+      // Auto-hide passed confirmation toast after 3 seconds
+      setTimeout(() => {
+        passedToast.classList.add('hidden');
+      }, 3500);
+    }
+
+    // Hazard Bottom Sheet Modal
+    function openHazardBottomSheet(name, severity, dist, road, reported, confirms, action) {
+      document.getElementById('sheet-hazard-name').textContent = name;
+      document.getElementById('sheet-distance').textContent = dist;
+      document.getElementById('sheet-road-name').textContent = road;
+      document.getElementById('sheet-reported-time').textContent = reported;
+      document.getElementById('sheet-confirm-count').textContent = `${confirms} drivers`;
+      document.getElementById('sheet-recommended-action').textContent = action;
+      
+      const pill = document.getElementById('sheet-severity-pill');
+      pill.textContent = severity;
+      if (severity.includes('High')) {
+        pill.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-100 text-orange-900";
+      } else {
+        pill.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-900";
+      }
+
+      document.getElementById('modal-hazard-detail').classList.remove('hidden');
+    }
+
+    function closeHazardBottomSheet() {
+      document.getElementById('modal-hazard-detail').classList.add('hidden');
+    }
+
+    function reportHazardFeedback(type) {
+      closeHazardBottomSheet();
+      showToast(`Thank you! Marked as ${type} for review.`);
+    }
+
+    // What's Ahead Sheet
+    function toggleWhatsAheadSheet(show) {
+      const modal = document.getElementById('modal-whats-ahead');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    // Report Hazard Flow
+    function openReportHazardModal() {
+      document.getElementById('modal-report-hazard').classList.remove('hidden');
+    }
+
+    function closeReportHazardModal() {
+      document.getElementById('modal-report-hazard').classList.add('hidden');
+    }
+
+    function selectReportType(btn, type) {
+      document.querySelectorAll('.report-type-btn').forEach(b => {
+        b.className = "report-type-btn p-2 rounded-lg border border-slate-200 bg-white font-medium text-slate-700";
+      });
+      btn.className = "report-type-btn p-2 rounded-lg border-2 border-brand-navy bg-blue-50/50 font-bold text-slate-800";
+    }
+
+    function selectSeverityLevel(btn, level) {
+      document.querySelectorAll('.sev-btn').forEach(b => {
+        b.className = "sev-btn p-2 rounded border border-slate-200 bg-white font-medium text-slate-700";
+      });
+      btn.className = "sev-btn p-2 rounded border-2 border-orange-500 bg-orange-50 font-bold text-orange-900";
+    }
+
+    function submitHazardReport() {
+      closeReportHazardModal();
+      const toast = document.getElementById('report-success-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    function dismissReportToast() {
+      document.getElementById('report-success-toast').classList.add('hidden');
+    }
+
+    // Audio & Map Controls
+    function toggleAudioMute() {
+      isMuted = !isMuted;
+      document.getElementById('mute-icon').textContent = isMuted ? '×' : '♪';
+      showToast(isMuted ? 'Voice guidance muted' : 'Voice guidance enabled');
+    }
+
+    function dismissVoiceAlert() {
+      document.getElementById('voice-alert-bubble').style.display = 'none';
+    }
+
+    function recenterVehicle() {
+      showToast('Map centered on vehicle');
+    }
+
+    function triggerMapZoom(dir) {
+      showToast(`Map zoom ${dir}`);
+    }
+
+    function toggleMapLayersModal() {
+      const m = document.getElementById('modal-map-layers');
+      m.classList.toggle('hidden');
+    }
+
+    function toggleNotificationSheet(show) {
+      const n = document.getElementById('modal-notifications');
+      if (show) n.classList.remove('hidden');
+      else n.classList.add('hidden');
+    }
+
+    function openSavedRoutesModal() {
+      showToast('Saved routes: Home ↔ Office, Home ↔ Airport');
+    }
+
+    function toggleRouteHazardsBreakdown() {
+      toggleWhatsAheadSheet(true);
+    }
+
+    function showToast(msg) {
+      // Small non-intrusive feedback
+      const bubble = document.getElementById('voice-alert-text');
+      if (bubble) {
+        bubble.textContent = msg;
+        document.getElementById('voice-alert-bubble').style.display = 'flex';
+      }
+    }
+
+    // Set Live Time for realism
+    setInterval(() => {
+      const now = new Date();
+      let hrs = now.getHours();
+      let mins = now.getMinutes();
+      hrs = hrs < 10 ? '0' + hrs : hrs;
+      mins = mins < 10 ? '0' + mins : mins;
+      const clockEl = document.getElementById('status-clock');
+      if (clockEl) clockEl.textContent = `${hrs}:${mins}`;
+    }, 1000);
+  </script>
+<script src="interactions.js"></script>
+</body>
+</html>
