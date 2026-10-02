@@ -469,9 +469,9 @@
           </div>
 
           <!-- Voice Navigation Alert Bubble (Spec requirement) -->
-          <div id="voice-alert-bubble" class="mt-1.5 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-lg shadow-md flex items-center justify-between text-[11px]">
+          <div id="voice-alert-bubble" role="status" aria-live="assertive" class="mt-1.5 bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-lg shadow-md flex items-center justify-between text-[11px]">
             <div class="flex items-center space-x-2">
-              <span class="text-teal-400">♪</span>
+              <span id="voice-alert-icon" class="text-amber-300 text-lg" aria-hidden="true">🔔</span>
               <span id="voice-alert-text" class="font-medium text-slate-200">“Large speed breaker ahead in 150 meters. Slow down.”</span>
             </div>
             <button onclick="dismissVoiceAlert()" class="text-slate-400 hover:text-white text-xs">✕</button>
@@ -1055,6 +1055,7 @@
     let currentView = 'home';
     let isMuted = false;
     let simIndex = 0;
+    let audioContext;
 
     // Realistic Simulator States (The requested 150m -> 100m -> 50m -> 20m -> Passed -> Next Hazard)
     const simulationStates = [
@@ -1272,6 +1273,37 @@
 
       // Hide passed toast if open
       document.getElementById('hud-passed-toast').classList.add('hidden');
+      playHazardAlert(s);
+    }
+
+    // Short two-tone ring for each new hazard distance/state.
+    function playHazardAlert(state) {
+      const bubble = document.getElementById('voice-alert-bubble');
+      bubble.classList.remove('alert-ringing');
+      void bubble.offsetWidth;
+      bubble.classList.add('alert-ringing');
+      window.setTimeout(() => bubble.classList.remove('alert-ringing'), 1500);
+
+      if (isMuted || !window.AudioContext && !window.webkitAudioContext) return;
+
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioContext = audioContext || new AudioContextClass();
+      if (audioContext.state === 'suspended') audioContext.resume();
+
+      const start = audioContext.currentTime;
+      [0, 0.18].forEach((offset, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = index === 0 ? 880 : 1175;
+        gain.gain.setValueAtTime(0.0001, start + offset);
+        gain.gain.exponentialRampToValueAtTime(0.18, start + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.14);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start(start + offset);
+        oscillator.stop(start + offset + 0.15);
+      });
     }
 
     // Trigger Hazard Passed and Auto-switch to Next Hazard (Pothole 650 m)
@@ -1321,6 +1353,7 @@
         currentSpeed.textContent = "58";
         speedBadge.textContent = "Safe Speed";
         speedBadge.className = "mt-1 text-[8px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-800";
+        playHazardAlert({ name: 'Deep Pothole', dist: 650 });
       }, 1000);
 
       // Auto-hide passed confirmation toast after 3 seconds
