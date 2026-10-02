@@ -79,15 +79,11 @@
 
     <!-- Top Hardware Status Bar -->
     <header class="bg-white/95 backdrop-blur-md px-5 pt-3 pb-2 flex justify-between items-center text-xs font-semibold text-slate-700 z-50 border-b border-slate-100 flex-shrink-0">
-      <span class="tracking-tight font-medium" id="status-clock">09:41</span>
+      <!-- <span class="tracking-tight font-medium" id="status-clock">09:41</span> -->
       <div class="flex items-center space-x-1.5">
-        <span class="px-1.5 py-0.5 text-[10px] font-mono tracking-wider font-bold rounded bg-slate-100 text-slate-600 border border-slate-200">UI DEMO</span>
         <!-- Icons -->
         <svg class="w-3.5 h-3.5 text-slate-700 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.25c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l.73-.73C8.03 20.19 9.93 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
         <svg class="w-3.5 h-3.5 text-slate-700 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/></svg>
-        <div class="w-5 h-2.5 border border-slate-600 rounded-sm p-0.5 flex items-center">
-          <div class="h-full bg-slate-700 rounded-2xs w-3.5"></div>
-        </div>
       </div>
     </header>
 
@@ -99,15 +95,18 @@
       <!-- ========================================== -->
 <section id="view-home" class="view-screen flex-1 overflow-y-auto">
 <div class="home-top"><div class="brand-lockup"><span class="brand-mark">↗</span><div><strong>Margrakshak</strong><small>A little more aware. A lot more prepared.</small></div></div><button class="icon-button" onclick="toggleNotificationSheet(true)" aria-label="Road notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><i></i></button></div>
-<div class="home-content"><div class="location-line"><span class="location-dot"></span> Connaught Place, New Delhi <span class="demo-tag">Sample area</span></div><h1>Every road.<br>A little safer.</h1><p class="intro">Know what’s ahead before you set off.</p>
+<div class="home-content"><div class="region-switch" role="tablist" aria-label="Road safety region"><button class="region-option active" role="tab" aria-selected="true" onclick="selectRegion('Delhi-NCR', 'Connaught Place, New Delhi', 82, 4)">Delhi-NCR</button><button class="region-option" role="tab" aria-selected="false" onclick="selectRegion('Lucknow', 'Hazratganj, Lucknow', 86, 3)">Lucknow</button><button class="region-option" role="tab" aria-selected="false" onclick="selectRegion('Noida', 'Noida Sector 62', 79, 5)">Noida</button></div>
+<div class="location-line"><span class="location-dot"></span> <span id="current-location">Connaught Place, New Delhi</span> <span class="demo-tag">Live coverage</span></div><h1>Every road.<br>A little safer.</h1><p class="intro">Know what’s ahead before you set off.</p>
 <button class="destination-search" onclick="switchView('search')"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><span>Where are you heading?</span><span class="search-arrow">↗</span></button>
 <div class="quick-places"><button onclick="selectQuickDestination('Connaught Place, New Delhi')"><span>⌂</span>Home</button><button onclick="selectQuickDestination('Gurugram Cyber City')"><span>▥</span>Work</button><button onclick="selectQuickDestination('IGI Airport Terminal 3')"><span>↗</span>Airport</button><button onclick="openSavedRoutesModal()"><span>☆</span>Saved</button></div>
 <div class="section-title"><h2>Your road, at a glance</h2><button onclick="toggleWhatsAheadSheet(true)">See all ↗</button></div>
-<div class="area-map" role="img" aria-label="Illustrative Delhi road map with three sample road alerts"><svg viewBox="0 0 360 155" preserveAspectRatio="xMidYMid slice"><rect width="360" height="155" fill="#edf0e7"/><path d="M0 25h90v38H0zm135 0h72v55h-72zm110-15h115v57H245zM30 107h87v48H30zm162-2h79v50h-79z" fill="#dce6d5"/><path d="M-30 92Q110 40 185 83T390 79M123-20L143 180M288-20L275 180M-10 135L370 29" stroke="#fff" stroke-width="15" fill="none"/><path d="M-30 92Q110 40 185 83T390 79" stroke="#c4cec0" stroke-width="2" fill="none"/><path d="M132 0L145 79Q230 119 365 80" stroke="#12614e" stroke-width="6" fill="none"/><text x="16" y="24" fill="#7b8675" font-size="10" letter-spacing="1">NEW DELHI</text><text x="219" y="141" fill="#7b8675" font-size="9">NH 48</text><circle cx="145" cy="79" r="13" fill="#fff"/><circle cx="145" cy="79" r="8" fill="#12614e"/><circle cx="230" cy="98" r="12" fill="#fff"/><text x="230" y="103" text-anchor="middle" fill="#b36220" font-size="16">!</text><circle cx="316" cy="89" r="12" fill="#fff"/><text x="316" y="94" text-anchor="middle" fill="#b36220" font-size="16">!</text></svg><span class="map-caption">Illustrative map · NH 48 corridor</span></div>
-<div class="road-overview"><div><span class="status-dot"></span><strong>4 road alerts nearby</strong><small>Includes 1 roadwork zone</small></div><button class="circle-arrow" onclick="toggleWhatsAheadSheet(true)" aria-label="View nearby road alerts">↗</button></div>
+<div class="area-map" role="img" aria-label="Delhi road map with nearby road alerts"><div class="map-status-row"><span class="map-live-pill"><i></i> Live road pulse</span><span class="map-score-pill"><strong id="map-safety-score">82</strong>/100 <b id="map-safety-label">Good</b></span></div><svg viewBox="0 0 360 155" preserveAspectRatio="xMidYMid slice"><rect width="360" height="155" fill="#edf0e7"/><path d="M0 25h90v38H0zm135 0h72v55h-72zm110-15h115v57H245zM30 107h87v48H30zm162-2h79v50h-79z" fill="#dce6d5"/><path d="M-30 92Q110 40 185 83T390 79M123-20L143 180M288-20L275 180M-10 135L370 29" stroke="#fff" stroke-width="15" fill="none"/><path d="M-30 92Q110 40 185 83T390 79" stroke="#c4cec0" stroke-width="2" fill="none"/><path d="M132 0L145 79Q230 119 365 80" stroke="#12614e" stroke-width="6" fill="none"/><text id="map-region-label" x="16" y="24" fill="#7b8675" font-size="10" letter-spacing="1">NEW DELHI</text><text id="map-road-label" x="219" y="141" fill="#7b8675" font-size="9">NH 48</text><circle cx="145" cy="79" r="13" fill="#fff"/><circle cx="145" cy="79" r="8" fill="#12614e"/><circle cx="230" cy="98" r="12" fill="#fff"/><text x="230" y="103" text-anchor="middle" fill="#b36220" font-size="16">!</text><circle cx="316" cy="89" r="12" fill="#fff"/><text x="316" y="94" text-anchor="middle" fill="#b36220" font-size="16">!</text></svg><span class="map-caption">Road map · NH 48 corridor</span></div>
+<div class="road-overview"><div><span class="status-dot"></span><strong id="nearby-alert-summary">4 road alerts nearby</strong><small id="nearby-alert-detail">Includes 1 roadwork zone</small></div><button class="circle-arrow" onclick="toggleWhatsAheadSheet(true)" aria-label="View nearby road alerts">↗</button></div>
+<div class="road-pulse-card"><div><span class="eyebrow">LOCAL ROAD PULSE</span><strong>Safety near you</strong><small><span class="status-dot"></span> Live community reports</small></div><div class="safety-score"><strong id="safety-score">82</strong><span>/ 100</span><small id="safety-score-label">Good</small></div></div>
+<div class="hazard-filters" aria-label="Filter nearby hazards"><button class="hazard-filter active" data-hazard="all" onclick="filterHazards('all', this)">All <b id="hazard-count-all">4</b></button><button class="hazard-filter" data-hazard="breaker" onclick="filterHazards('breaker', this)">Breakers <b id="hazard-count-breaker">1</b></button><button class="hazard-filter" data-hazard="pothole" onclick="filterHazards('pothole', this)">Potholes <b id="hazard-count-pothole">1</b></button><button class="hazard-filter" data-hazard="works" onclick="filterHazards('works', this)">Roadworks <b id="hazard-count-works">1</b></button></div>
 <div class="section-title"><h2>Plan your next drive</h2><span>Suggested</span></div>
-<button class="featured-route" onclick="selectDestination('Gurugram Cyber City','24.6 km','42 min',82,4,1)"><div class="route-heading"><span class="route-symbol">↗</span><div><strong>Gurugram Cyber City</strong><small>via NH 48 · 24.6 km</small></div><span class="route-time">42<small>min</small></span></div><div class="route-bottom"><span><i></i>Fewer reported hazards</span><span>View route →</span></div></button>
-<div class="safety-note"><span>◈</span><div><strong>Better roads start with us.</strong><p>Spotted a hazard? Report it once safely parked.</p></div><button onclick="openReportHazardModal()" aria-label="Report a road hazard">＋</button></div><p class="demo-note">Interactive prototype · Sample routes and alerts</p></div></section>
+<button class="featured-route" onclick="selectDestination('Gurugram Cyber City','24.6 km','42 min',82,4,1)"><div class="route-heading"><span class="route-symbol">↗</span><div><strong id="suggested-destination">Gurugram Cyber City</strong><small id="suggested-route">via NH 48 · 24.6 km</small></div><span class="route-time"><span id="suggested-time">42</span><small>min</small></span></div><div class="route-bottom"><span><i></i><span id="suggested-route-note">Fewer reported hazards</span></span><span>View route →</span></div></button>
+<div class="safety-note"><span>◈</span><div><strong>Better roads start with us.</strong><p>Spotted a hazard? Report it once safely parked.</p></div><button onclick="openReportHazardModal()" aria-label="Report a road hazard">＋</button></div><p class="demo-note">Road safety coverage · Community-powered alerts</p></div></section>
       <section id="view-search" class="view-screen hidden flex-1 flex flex-col bg-white overflow-y-auto">
         <!-- Search Header Bar -->
         <div class="p-4 border-b border-brand-border bg-slate-50/80 sticky top-0 z-20">
@@ -126,7 +125,7 @@
           
           <div class="flex items-center space-x-2 mt-3 px-1 text-xs text-slate-500">
             <span class="inline-block w-2 h-2 rounded-full bg-teal-600"></span>
-            <span>Origin: <strong>Connaught Place, New Delhi</strong></span>
+            <span>Origin: <strong id="search-origin-location">Connaught Place, New Delhi</strong></span>
           </div>
         </div>
 
@@ -182,6 +181,22 @@
                   <span class="text-[11px] text-amber-700 font-semibold">Score 76</span>
                 </div>
               </div>
+
+              <div onclick="selectDestination('Lucknow Airport', '11.8 km', '24 min', 86, 3, 0)" class="p-3 rounded-lg border border-slate-200 hover:border-brand-navy cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-all">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded bg-blue-50 text-brand-navy flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-800">Lucknow Airport</h3>
+                    <p class="text-xs text-slate-500">Shaheed Path • Lucknow</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-slate-700 block">11.8 km</span>
+                  <span class="text-[11px] text-emerald-700 font-semibold">Score 86</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -195,6 +210,24 @@
                 <div>
                   <h4 class="text-sm font-bold text-slate-900">via NH-48 Express Corridor</h4>
                   <p class="text-xs text-slate-600 mt-0.5">Smooth asphalt, monitored speed breakers</p>
+                </div>
+
+                <div class="mt-2.5 border border-slate-200 rounded-xl p-3 bg-white hover:border-brand-navy cursor-pointer" onclick="selectDestination('Lucknow Airport', '11.8 km', '24 min', 86, 3, 0)">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h4 class="text-sm font-bold text-slate-900">via Shaheed Path Corridor</h4>
+                      <p class="text-xs text-slate-600 mt-0.5">Well-lit arterial road, verified reports</p>
+                    </div>
+                    <div class="text-right">
+                      <span class="text-base font-bold text-brand-navy">24 min</span>
+                      <span class="text-xs text-slate-500 block">11.8 km</span>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-center">
+                    <div><span class="text-[10px] text-slate-500 block">Safety Score</span><span class="text-xs font-bold text-emerald-700">86 / 100</span></div>
+                    <div><span class="text-[10px] text-slate-500 block">Hazards</span><span class="text-xs font-bold text-amber-700">3 Ahead</span></div>
+                    <div><span class="text-[10px] text-slate-500 block">Roadworks</span><span class="text-xs font-bold text-slate-700">Clear</span></div>
+                  </div>
                 </div>
                 <div class="text-right">
                   <span class="text-base font-bold text-brand-navy">42 min</span>
@@ -500,6 +533,13 @@
               <circle r="14" fill="#EA580C" stroke="#ffffff" stroke-width="3"/>
               <text y="4" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold">⚠</text>
             </g>
+            <g id="active-breaker-strip" transform="translate(200, 310)" aria-label="Speed breaker on route">
+              <rect x="-19" y="-13" width="38" height="4" rx="1" fill="#334155"/>
+              <rect x="-19" y="-7" width="38" height="4" rx="1" fill="#f8fafc"/>
+              <rect x="-19" y="-1" width="38" height="4" rx="1" fill="#334155"/>
+              <rect x="-19" y="5" width="38" height="4" rx="1" fill="#f8fafc"/>
+              <rect x="-19" y="11" width="38" height="4" rx="1" fill="#334155"/>
+            </g>
 
             <!-- Hazard Marker 2 on Road (Further ahead) -->
             <g id="active-marker-2" transform="translate(190, 160)" class="cursor-pointer" onclick="openHazardBottomSheet('Pothole', 'Medium Risk', '650 m ahead', 'NH-48', 'Today', 88, 'Drive carefully')">
@@ -509,15 +549,16 @@
           </svg>
 
           <!-- Current Vehicle Arrow (Navigation Indicator with pulse) -->
-          <div id="vehicle-arrow-container" class="absolute top-[430px] left-[200px] transform -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-700">
+          <div id="vehicle-arrow-container" class="absolute top-[430px] left-[200px] transform -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-[900ms] ease-linear">
             <!-- Beacon circle -->
             <div class="absolute -inset-3 rounded-full bg-blue-500/20 beacon-ring pointer-events-none"></div>
             <!-- Car Pointer -->
             <div class="w-8 h-8 rounded-full bg-brand-navy border-2 border-white shadow-lg flex items-center justify-center text-white">
-              <svg class="w-4 h-4 text-teal-300 transform -rotate-45" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-4 h-4 text-teal-300" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
               </svg>
             </div>
+            <div class="live-navigation-status"><span class="live-navigation-dot"></span><strong>Live navigation</strong><span id="navigation-status-text">Route tracking active</span></div>
           </div>
 
           <!-- Speed Limit & Current Speed Widget (Left Floating) -->
@@ -535,7 +576,7 @@
             <!-- Speed Limit Sign (Standard Indian Circular Sign) -->
             <div class="w-11 h-11 rounded-full bg-white border-[3px] border-red-600 shadow-md flex flex-col items-center justify-center self-center">
               <span class="text-[8px] font-bold text-slate-500 leading-tight">LIMIT</span>
-              <span class="text-xs font-black font-mono text-slate-900 leading-none">60</span>
+              <span id="speed-limit-val" class="text-xs font-black font-mono text-slate-900 leading-none">60</span>
             </div>
           </div>
 
@@ -552,21 +593,6 @@
             </button>
           </div>
 
-          <!-- Simulation Interactive Steps Control Floating Bar -->
-          <div class="absolute bottom-2 inset-x-3 z-30 bg-slate-900/90 backdrop-blur-md rounded-xl p-2 text-white border border-slate-700 flex items-center justify-between shadow-lg">
-            <div class="text-[10px] flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-teal-400 animate-ping"></span>
-              <span class="font-mono text-slate-300">DEMO SIMULATOR:</span>
-            </div>
-            
-            <div class="flex items-center space-x-1">
-              <button onclick="setSimState(0)" id="sim-btn-0" class="px-2 py-1 rounded text-[10px] font-bold bg-teal-600 text-white">150m</button>
-              <button onclick="setSimState(1)" id="sim-btn-1" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">100m</button>
-              <button onclick="setSimState(2)" id="sim-btn-2" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">50m</button>
-              <button onclick="setSimState(3)" id="sim-btn-3" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-slate-700">20m</button>
-              <button onclick="triggerPassedAndNext()" id="sim-btn-4" class="px-2 py-1 rounded text-[10px] font-bold bg-slate-800 text-emerald-400 hover:bg-slate-700">PASS</button>
-            </div>
-          </div>
         </div>
 
         <!-- ========================================== -->
@@ -620,7 +646,7 @@
           <div class="w-12 h-12 rounded-full bg-teal-500 text-white flex items-center justify-center mx-auto mb-2 shadow-inner">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           </div>
-          <h2 class="text-xl font-bold tracking-tight">Demo trip completed</h2>
+          <h2 class="text-xl font-bold tracking-tight">Trip completed</h2>
           <p class="text-xs text-blue-200 mt-0.5">Delhi (Connaught Place) → Gurugram Cyber City</p>
         </div>
 
@@ -647,7 +673,7 @@
               <span class="text-3xl font-extrabold font-mono text-slate-900">82</span>
               <span class="text-sm font-semibold text-slate-500">/ 100</span>
             </div>
-            <p class="text-xs text-slate-600">Sample trip summary. This prototype does not measure driving behavior.</p>
+            <p class="text-xs text-slate-600">Your trip summary and road safety overview.</p>
           </div>
 
           <!-- Breakdown Statistics -->
@@ -718,7 +744,7 @@
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Verification Status</span>
-              <span class="font-bold text-blue-700">Sample community report</span>
+              <span class="font-bold text-blue-700">Community report</span>
             </div>
           </div>
 
@@ -890,7 +916,7 @@
           <!-- Location Auto-detection readout -->
           <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
             <span class="text-slate-600">Location:</span>
-            <span class="font-bold text-slate-800">NH-48, km marker 28.4 (sample location)</span>
+            <span class="font-bold text-slate-800">NH-48, km marker 28.4</span>
           </div>
 
           <!-- Severity Selection -->
@@ -922,7 +948,7 @@
         <div class="flex items-center space-x-2">
           <span>✓</span>
           <div>
-            <div>Report saved in this demo</div>
+            <div>Report saved successfully</div>
             <div class="text-[10px] text-emerald-200 font-mono">Not sent to any service</div>
           </div>
         </div>
@@ -941,7 +967,7 @@
 
           <div class="space-y-2 text-xs">
             <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
-              <span class="font-medium text-slate-700">Sample traffic overlay</span>
+              <span class="font-medium text-slate-700">Traffic overlay</span>
               <input type="checkbox" checked class="rounded text-brand-navy">
             </label>
             <label class="flex items-center justify-between p-2 rounded bg-slate-50 cursor-pointer">
@@ -1039,7 +1065,7 @@
           <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
           <span class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
         </div>
-        <span class="text-[10px] font-bold text-emerald-700 mt-0.5">Drive demo</span>
+        <span class="text-[10px] font-bold text-emerald-700 mt-0.5">Active drive</span>
       </button>
 
       <button onclick="openReportHazardModal()" class="flex flex-col items-center hover:text-brand-navy">
@@ -1056,6 +1082,30 @@
     let isMuted = false;
     let simIndex = 0;
     let audioContext;
+    let navigationTimer;
+    let navigationPassTimer;
+    let navigationDistance = 150;
+    let routeDistanceKm = 12.4;
+    const regionData = {
+      'Delhi-NCR': {
+        location: 'Connaught Place, New Delhi', score: 82, label: 'Good', alerts: 4,
+        detail: 'Includes 1 roadwork zone', mapRegion: 'NEW DELHI', road: 'NH 48',
+        destination: 'Gurugram Cyber City', route: 'via NH 48 · 24.6 km', time: '42',
+        note: 'Fewer reported hazards', breaker: 1, pothole: 1, works: 1
+      },
+      Lucknow: {
+        location: 'Hazratganj, Lucknow', score: 86, label: 'Very good', alerts: 3,
+        detail: '2 verified reports in the last hour', mapRegion: 'LUCKNOW', road: 'SHAHEED PATH',
+        destination: 'Lucknow Airport', route: 'via Shaheed Path · 11.8 km', time: '24',
+        note: 'Smoothest route available', breaker: 1, pothole: 1, works: 0
+      },
+      Noida: {
+        location: 'Noida Sector 62', score: 79, label: 'Watchful', alerts: 5,
+        detail: 'Includes 2 active community reports', mapRegion: 'NOIDA', road: 'NOIDA-GREATER NOIDA EXPR.',
+        destination: 'Pari Chowk, Greater Noida', route: 'via Noida Expressway · 21.5 km', time: '38',
+        note: '2 caution zones on route', breaker: 1, pothole: 2, works: 2
+      }
+    };
 
     // Realistic Simulator States (The requested 150m -> 100m -> 50m -> 20m -> Passed -> Next Hazard)
     const simulationStates = [
@@ -1091,9 +1141,9 @@
         carY: 390,
         following: '◉ Pothole (600 m ahead)',
         speed: 54,
-        speedLimit: 60,
-        speedStatus: 'Safe',
-        speedBadgeColor: 'bg-emerald-100 text-emerald-800'
+        speedLimit: 50,
+        speedStatus: 'Over limit',
+        speedBadgeColor: 'bg-red-100 text-red-800'
       },
       {
         dist: 50,
@@ -1109,7 +1159,7 @@
         carY: 350,
         following: '◉ Pothole (550 m ahead)',
         speed: 38,
-        speedLimit: 60,
+        speedLimit: 40,
         speedStatus: 'Controlled',
         speedBadgeColor: 'bg-emerald-100 text-emerald-800'
       },
@@ -1127,7 +1177,7 @@
         carY: 310,
         following: '◉ Pothole (520 m ahead)',
         speed: 22,
-        speedLimit: 60,
+        speedLimit: 30,
         speedStatus: 'Target Speed',
         speedBadgeColor: 'bg-emerald-100 text-emerald-800'
       }
@@ -1168,12 +1218,60 @@
           }
         }
       });
+
+      if (viewName !== 'active-nav') {
+        stopLiveNavigation();
+      }
     }
 
     // Preset selection handlers
     function selectQuickDestination(name) {
       document.getElementById('destination-input').value = name;
       switchView('search');
+    }
+
+    function selectRegion(region, location, score, alertCount) {
+      const data = regionData[region];
+      if (!data) return;
+      document.querySelectorAll('.region-option').forEach(button => {
+        const selected = button.textContent.trim() === region;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-selected', selected ? 'true' : 'false');
+      });
+      document.getElementById('current-location').textContent = data.location;
+      document.getElementById('search-origin-location').textContent = data.location;
+      document.getElementById('safety-score').textContent = data.score;
+      document.getElementById('safety-score-label').textContent = data.label;
+      document.getElementById('map-safety-score').textContent = data.score;
+      document.getElementById('map-safety-label').textContent = data.label;
+      document.getElementById('hazard-count-all').textContent = data.alerts;
+      document.getElementById('hazard-count-breaker').textContent = data.breaker;
+      document.getElementById('hazard-count-pothole').textContent = data.pothole;
+      document.getElementById('hazard-count-works').textContent = data.works;
+      document.getElementById('nearby-alert-summary').textContent = `${data.alerts} road alerts nearby`;
+      document.getElementById('nearby-alert-detail').textContent = data.detail;
+      document.getElementById('map-region-label').textContent = data.mapRegion;
+      document.getElementById('map-road-label').textContent = data.road;
+      document.querySelector('.area-map').setAttribute('aria-label', `${region} road map with nearby road alerts`);
+      document.querySelector('.map-caption').textContent = `Road map · ${data.road} corridor`;
+      document.getElementById('suggested-destination').textContent = data.destination;
+      document.getElementById('suggested-route').textContent = data.route;
+      document.getElementById('suggested-time').textContent = data.time;
+      document.getElementById('suggested-route-note').textContent = data.note;
+      document.querySelector('.featured-route').setAttribute('onclick', `selectDestination('${data.destination}', '${data.route.split('·')[1].trim()}', '${data.time} min', ${data.score}, ${data.alerts}, 1)`);
+    }
+
+    function filterHazards(type, selectedButton) {
+      document.querySelectorAll('.hazard-filter').forEach(button => button.classList.remove('active'));
+      selectedButton.classList.add('active');
+      const labels = {
+        all: 'Showing all nearby road alerts',
+        breaker: 'Showing speed breaker alerts',
+        pothole: 'Showing pothole alerts',
+        works: 'Showing roadwork alerts'
+      };
+      const mapCaption = document.querySelector('.map-caption');
+      if (mapCaption) mapCaption.textContent = labels[type];
     }
 
     function selectPresetRoute(routeName) {
@@ -1200,11 +1298,43 @@
     }
 
     function launchActiveNavigation() {
+      stopLiveNavigation();
+      navigationDistance = 150;
+      routeDistanceKm = 12.4;
       switchView('active-nav');
       setSimState(0);
+      startLiveNavigation();
+    }
+
+    function startLiveNavigation() {
+      if (navigationTimer) return;
+      navigationTimer = window.setInterval(() => {
+        if (currentView !== 'active-nav') {
+          stopLiveNavigation();
+          return;
+        }
+        navigationDistance = Math.max(0, navigationDistance - 5);
+        routeDistanceKm = Math.max(0, routeDistanceKm - 0.02);
+        updateLiveNavigationDistance();
+        if (navigationDistance === 0) {
+          triggerPassedAndNext();
+          navigationDistance = 650;
+          navigationPassTimer = window.setTimeout(() => {
+            if (currentView === 'active-nav') setSimState(0);
+          }, 1700);
+        }
+      }, 1000);
+    }
+
+    function stopLiveNavigation() {
+      window.clearInterval(navigationTimer);
+      window.clearTimeout(navigationPassTimer);
+      navigationTimer = null;
+      navigationPassTimer = null;
     }
 
     function endTripAndShowSummary() {
+      stopLiveNavigation();
       switchView('summary');
     }
 
@@ -1212,10 +1342,12 @@
     function setSimState(index) {
       simIndex = index;
       const s = simulationStates[index];
+      setActiveHazardMarker('active-marker-1');
 
       // Update simulator buttons styling
       [0, 1, 2, 3].forEach(i => {
         const btn = document.getElementById(`sim-btn-${i}`);
+        if (!btn) return;
         if (i === index) {
           btn.className = "px-2 py-1 rounded text-[10px] font-bold bg-teal-600 text-white";
         } else {
@@ -1237,6 +1369,7 @@
       const voiceText = document.getElementById('voice-alert-text');
       const vehicleArrow = document.getElementById('vehicle-arrow-container');
       const currentSpeed = document.getElementById('current-speed-val');
+      const speedLimit = document.getElementById('speed-limit-val');
       const speedBadge = document.getElementById('speed-status-badge');
 
       // Distance typography scaling for under 100m
@@ -1265,15 +1398,49 @@
 
       // Vehicle map position
       vehicleArrow.style.top = `${s.carY}px`;
+      document.getElementById('navigation-status-text').textContent = s.dist <= 50 ? 'Hazard alert active' : 'Route tracking active';
+      const remainingDistance = ['12.4', '11.8', '11.2', '10.9'][index];
+      const remainingEta = ['18', '17', '16', '16'][index];
+      document.getElementById('nav-dist-rem').textContent = `${remainingDistance} km remaining`;
+      document.getElementById('nav-eta-min').textContent = remainingEta;
 
       // Speedometer
       currentSpeed.textContent = s.speed;
+      speedLimit.textContent = s.speedLimit;
       speedBadge.textContent = s.speedStatus;
       speedBadge.className = `mt-1 text-[8px] font-bold px-1 py-0.5 rounded ${s.speedBadgeColor}`;
 
       // Hide passed toast if open
       document.getElementById('hud-passed-toast').classList.add('hidden');
       playHazardAlert(s);
+    }
+
+    function updateLiveNavigationDistance() {
+      const stateIndex = navigationDistance > 100 ? 0 : navigationDistance > 50 ? 1 : navigationDistance > 20 ? 2 : 3;
+      if (stateIndex !== simIndex) setSimState(stateIndex);
+
+      const state = simulationStates[stateIndex];
+      const distanceValue = Math.round(navigationDistance);
+      const map = document.querySelector('#view-active-nav .map-grid');
+      const mapHeight = map ? map.clientHeight : 600;
+      const routeStartY = mapHeight * (520 / 600);
+      const hazardY = mapHeight * (310 / 600);
+      const vehicleTop = routeStartY - ((150 - Math.min(150, navigationDistance)) / 150) * (routeStartY - hazardY);
+      document.getElementById('hud-distance-val').textContent = distanceValue;
+      document.getElementById('hud-distance-unit').textContent = 'm ahead';
+      document.getElementById('vehicle-arrow-container').style.top = `${Math.max(hazardY, vehicleTop)}px`;
+      document.getElementById('nav-dist-rem').textContent = `${routeDistanceKm.toFixed(1)} km remaining`;
+      document.getElementById('navigation-status-text').textContent = distanceValue <= 50 ? 'Hazard alert active' : 'Route tracking active';
+      if (distanceValue <= 50) {
+        document.getElementById('hud-distance-val').className = "text-3xl font-black font-mono tracking-tight text-red-600";
+      }
+    }
+
+    function setActiveHazardMarker(markerId) {
+      ['active-marker-1', 'active-marker-2'].forEach(id => {
+        const marker = document.getElementById(id);
+        if (marker) marker.classList.toggle('hazard-marker-active', id === markerId);
+      });
     }
 
     // Short two-tone ring for each new hazard distance/state.
@@ -1306,6 +1473,30 @@
       });
     }
 
+    // A short descending chime confirms that the vehicle has cleared the hazard.
+    function playHazardPassedAlert() {
+      if (isMuted || (!window.AudioContext && !window.webkitAudioContext)) return;
+
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioContext = audioContext || new AudioContextClass();
+      if (audioContext.state === 'suspended') audioContext.resume();
+
+      const start = audioContext.currentTime;
+      [0, 0.16].forEach((offset, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = index === 0 ? 1046 : 784;
+        gain.gain.setValueAtTime(0.0001, start + offset);
+        gain.gain.exponentialRampToValueAtTime(0.2, start + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.2);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start(start + offset);
+        oscillator.stop(start + offset + 0.21);
+      });
+    }
+
     // Trigger Hazard Passed and Auto-switch to Next Hazard (Pothole 650 m)
     function triggerPassedAndNext() {
       const passedToast = document.getElementById('hud-passed-toast');
@@ -1324,10 +1515,15 @@
       const vehicleArrow = document.getElementById('vehicle-arrow-container');
       const currentSpeed = document.getElementById('current-speed-val');
       const speedBadge = document.getElementById('speed-status-badge');
+      const speedLimit = document.getElementById('speed-limit-val');
+
+      playHazardPassedAlert();
+      setActiveHazardMarker('active-marker-2');
 
       // Move car slightly past breaker
       vehicleArrow.style.top = '270px';
       hudCard.classList.remove('proximity-urgent');
+      document.getElementById('navigation-status-text').textContent = 'Hazard passed · recalculating route';
 
       // Show temporary passed confirmation banner
       passedName.textContent = "Large Speed Breaker";
@@ -1351,6 +1547,7 @@
         hudFollowing.textContent = "▥ Construction Zone (1.2 km ahead)";
 
         currentSpeed.textContent = "58";
+        speedLimit.textContent = "50";
         speedBadge.textContent = "Safe Speed";
         speedBadge.className = "mt-1 text-[8px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-800";
         playHazardAlert({ name: 'Deep Pothole', dist: 650 });

@@ -22,7 +22,7 @@ selectPresetRoute = () => selectDestination(...destinations[0]);
 $('#tab-preview').onclick=()=>goToRoutePreview(trip.mode);
 $('#tab-nav').onclick=()=>launchActiveNavigation();
 const originalLaunch=launchActiveNavigation;
-launchActiveNavigation=function(){if(trip.name!=='Gurugram Cyber City'||trip.mode==='fast'){selectDestination(...destinations[0]);showToast('Driving demo uses the sample NH 48 route.');}originalLaunch();};
+launchActiveNavigation=function(){if(trip.name!=='Gurugram Cyber City'||trip.mode==='fast'){selectDestination(...destinations[0]);showToast('Navigation started on the NH 48 route.');}originalLaunch();};
 const searchRows=$$('#view-search [onclick^="selectDestination"]');
 const empty=document.createElement('p');empty.className='empty-state';empty.hidden=true;empty.textContent='No matching sample destinations. Try Gurugram, Airport or Noida.';searchRows[0].parentElement.append(empty);
 const options=$('#view-search>div:nth-child(2)>div:nth-child(2)');
